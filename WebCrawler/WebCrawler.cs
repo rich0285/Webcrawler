@@ -5,8 +5,10 @@ using System.Text.RegularExpressions;
 
 namespace WebCrawler
 {
+
     internal class WebCrawler
     {
+
         private static readonly Regex UrlTagPattern = new Regex(@"<a.*?href=[""'](?<url>.*?)[""'].*?>(?<name>.*?)</a>", RegexOptions.IgnoreCase);
         private static readonly Regex HrefPattern = new Regex("href\\s*=\\s*(?:\"(?<1>[^\"]*)\"|(?<1>\\S+))", RegexOptions.IgnoreCase);
 
@@ -14,7 +16,11 @@ namespace WebCrawler
 
         public int MaxLinksCount { get; private set; }
         public int GoodLinksCount { get; private set; }
+        public int RBotTxtCounter;
 
+        public Dictionary<string, string> robotstxt;
+
+        public int AntalLinks;
         public Dictionary<string, bool> VisitedUrls { get; private set; }
 
         public WebCrawler(string[] initialUrls, int maxLinksCount)
@@ -22,12 +28,15 @@ namespace WebCrawler
             VisitedUrls = new Dictionary<string, bool>();
             this.MaxLinksCount = maxLinksCount;
             this.GoodLinksCount = 0;
+            robotstxt = new Dictionary<string, string>();
 
             foreach (var urlStr in initialUrls)
             {
                 var ub = new UriBuilder(urlStr);
                 Frontier.Enqueue(ub.Uri);
+                RobotTxtChecker(ub.Host);
             }
+
 
             Crawl();
         }
@@ -79,5 +88,30 @@ namespace WebCrawler
         {
             return Uri.TryCreate(hostUrl, url, out Uri absoluteUrl) ? absoluteUrl : null;
         }
+
+        private void RobotTxtChecker(string hostUrl)
+        {
+            try
+            {
+                string fileContent = new WebClient().DownloadString("http://" + hostUrl + "/robots.txt");
+                robotstxt[hostUrl] = fileContent;
+               foreach (var txtFile in robotstxt.Values)
+                {
+                    Console.WriteLine(RBotTxtCounter +" "+ txtFile);
+                }
+                Console.WriteLine();
+                Console.WriteLine();
+                Console.WriteLine();
+           
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+
+
+        }
     }
+
 }
